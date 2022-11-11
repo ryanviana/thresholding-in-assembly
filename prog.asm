@@ -1,10 +1,5 @@
-#Ryan Braz Tintore Viana, 11846690
-#Gustavo Barbosa Sanchez, 11802440
+#Created using MARS on WINDOWS.
 
-#Feito no MARS em ambiente Windows.
-
-#Antes de rodar o programa, por favor, se atente ao caminho do "fileName" e "binaryFileName"
-#que pode alterar de acordo com a maquina utilizada.
 .data
 
 	fileName: .asciiz "D:/road100x100bin.pgm"
@@ -25,26 +20,27 @@
 
 	main:	
 
-		#syscall para abrir o arquivo
+		#syscall to open file
+		
 		li $v0, 13 	  
-		la $a0, fileName  #arquivo que sera aberto
+		la $a0, fileName		#file to be open
 		li $a1, 0 	  
 		li $a2, 0         
 		syscall		
 			
 
-		move $s6, $v0   #salva o descritor do arquivo
-		li $v0, 14      #le do arquivo aberto
+		move $s6, $v0			#save file descriptor
+		li $v0, 14      		#read from open file
 		move $a0, $s6   
-		la $a1, buffer  #endereco do buffer em que os dados serao lidos
+		la $a1, buffer  		#buffer address to read files
 		li $a2, 10038	
 		syscall
 		
-        addiu $t0, $zero, 38  #inicializa a variavel para ler os bits (pula os dados iniciais)	
-		jal createHistogram   #rotina que cria o histograma.
+        addiu $t0, $zero, 38  #initialize variable to read the byts (skip initial ones)	
+		jal createHistogram   
 		
-		addi $t0, $zero, 0    #inicializa o contador.
-		jal printHistogram    #rotina que printa o histograma.
+		addi $t0, $zero, 0    		#initialize the counter.
+		jal printHistogram    
 		
 		
 		li $v0, 4
@@ -59,40 +55,40 @@
 		move $s1, $v0  
 		
 		addi $t0, $zero, 38   
-		jal binarizeLoop     #rotina que vai binarizar a imagem de acordo com o limiar lido.
+		jal binarizeLoop     		
 		
 		
 		li $v0, 4
 		la $a0, newHistogramMsg
 		syscall
 		
-		jal printBlackAndWhite  #imprime o histograma da imagem binarizada.
+		jal printBlackAndWhite
 		
 		
 		#cria um novo arquivo para a imagem binarizada.
 		#usa uma syscall para abrir um arquivo e como ele nao existe, eh criado.
 		li   $v0, 13              
 		la   $a0, binaryFileName  
-		li   $a1, 1               #flag para abrir no modo de escrita
+		li   $a1, 1               	#flag to open in write mode
 		li   $a2, 0         	  
 		syscall
 
-		move $s0, $v0      	  #salva o descritor do arquivo. 
+		move $s0, $v0      	  	#save file descriptor 
 		
-		#escreve no arquivo binarizado por meio de uma syscall.
+		#write on binary file
 		li   $v0, 15      
 		move $a0, $s0      
 		la   $a1, buffer  
 		li   $a2, 10038   
 		syscall           
 		
-		#fecha o arquivo da imagem binarizada.
+		#close binary file
 		li   $v0, 16       
 		move $a0, $s6      
 		syscall  
 
 
-		#fecha o arquivo original.
+		#close the original file
 		li $v0, 16
 		move $a0, $s6
 		syscall
@@ -104,23 +100,23 @@
 		##FUNCTIONS##
 		
 		createHistogram:
-			beq $t0, 10038, finishCreateHistogram  #se tivermos lido todos os bytes vamos para o proximo passo.	
+			beq $t0, 10038, finishCreateHistogram  #if all bytes are read, we go to the next step.	
 		
-			lbu $t1, buffer($t0)	     	       #load byte da posicao 38 < $t0 < 10038 do buffer
-			lbu $t2, histogram($t1)                #load byte do histograma na posicao correspondente ao valor do byte (0 ~ 255)
-			addiu $t2, $t2, 1                      #somar 1 significa que temos mais 1 byte de valor igual a posicao do histograma.    
-			sb $t2, histogram($t1)                 #salva o novo valor no "vetor" histograma.
+			lbu $t1, buffer($t0)	     	       #load byte from position 38 < $t0 < 10038 of the buffer
+			lbu $t2, histogram($t1)                
+			addiu $t2, $t2, 1                      #add byte to histogram    
+			sb $t2, histogram($t1)                 #save the new value in the histogram vector
 			
-			addi $t0, $t0, 1                       #incrementa o contador
+			addi $t0, $t0, 1                       
 			
-			j createHistogram	               #repete
+			j createHistogram	               
 			finishCreateHistogram:
 			jr $ra
 			
 		printHistogram:	
-			beq $t0, 256, finishPrintHistogram  #loop	
+			beq $t0, 256, finishPrintHistogram 	
 			
-			li $v0, 4			    #apenas imprimindo o valor de todas posicoes do histograma.
+			li $v0, 4			    
 			la $a0, rightParenthesis
 			syscall		
 			
@@ -155,23 +151,23 @@
 		binarizeLoop:
 			beq $t0, 10038, finishBinarizeLoop	
 		
-			lbu $t1, buffer($t0)  # le todos os bytes do buffer
-			bge $t1, $s1, white   # se e maior ou igual o limiar, vira branco.
-			blt $t1, $s1, black   # caso contrario, vira preto.
+			lbu $t1, buffer($t0)  # read all bytes from bufffer
+			bge $t1, $s1, white   
+			blt $t1, $s1, black   
 		
 			white:
 				move $t1, $zero
 				addiu $t1, $t1, 255
-				sb $t1, buffer($t0)  #guarda o byte branco no buffer.
+				sb $t1, buffer($t0) 
 				
-				lw $t3, whitePixels  #aumenta o contador de pixels brancos para criar o novo histograma.
+				lw $t3, whitePixels 
 				add $t3, $t3, 1
 				sw $t3 whitePixels
 				
 				addi $t0, $t0, 1		
 				j binarizeLoop
 		
-			black: #mesmo procedimento mas agora para os pixels pretos.
+			black: 
 				move $t1, $zero
 				addiu $t1, $t1, 0
 				sb $t1, buffer($t0)
@@ -186,7 +182,7 @@
 			finishBinarizeLoop:
 			jr $ra
 		
-		printBlackAndWhite:  #imprime o novo histograma.
+		printBlackAndWhite:  
 			li $v0, 4
 			la $a0, rightParenthesis
 			syscall
