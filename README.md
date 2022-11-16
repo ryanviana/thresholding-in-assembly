@@ -11,7 +11,7 @@ The simplest thresholding methods replace each pixel in an image with a black pi
 
 ##### The binary image resulting from a thresholding of the original image.
 
-![Processed Image](https://github.com/ryanviana/thresholding-in-assembly/blob/main/images/road-100x100-limiar-version.jpgg "Processed Image").
+![Processed Image](https://github.com/ryanviana/thresholding-in-assembly/blob/main/images/road-100x100-limiar-version.jpg "Processed Image").
 
 ### How to Run
 
